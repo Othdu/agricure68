@@ -36,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
+                    builder: (context) =>  ProfilePage(),
                   ),
                 );
               },
@@ -62,13 +62,13 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.article_outlined, color: Color(0xFF388E3C)),
-            title: const Text('My Farm Profile', style: TextStyle(fontSize: 15, color: Color(0xFF212121))),
+            title: const Text('My Profile', style: TextStyle(fontSize: 15, color: Color(0xFF212121))),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ProfilePage(),
+                  builder: (context) => ProfilePage(),
                 ),
               );
             },
@@ -77,10 +77,10 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.settings_outlined, color: Color(0xFF388E3C)),
             title: const Text('App Settings', style: TextStyle(fontSize: 15, color: Color(0xFF212121))),
             onTap: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings Tapped (Not Implemented)')),
-              );
+              // Navigator.pop(context);
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   const SnackBar(content: Text('Settings Tapped (Not Implemented)')),
+              // );
             },
           ),
           const Divider(thickness: 1, indent: 16, endIndent: 16),

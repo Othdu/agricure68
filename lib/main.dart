@@ -6,24 +6,27 @@ import 'screens/home_page.dart';
 // Import AppColors if you need it for global theme setup, otherwise it's encapsulated
 // import 'core/theme/app_colors.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final sensorProvider = SensorDataProvider();
-  await sensorProvider.init();
-  runApp(MyApp(sensorProvider: sensorProvider));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final SensorDataProvider sensorProvider;
-
-  const MyApp({super.key, required this.sensorProvider});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FarmDataProvider()),
-        ChangeNotifierProvider.value(value: sensorProvider),
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = SensorDataProvider();
+            // Initialize in the background
+            provider.init();
+            return provider;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'AgriCure',

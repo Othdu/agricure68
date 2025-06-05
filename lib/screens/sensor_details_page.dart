@@ -97,42 +97,88 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
   List<FlSpot> _tempSpots = [];
   List<FlSpot> _humiditySpots = [];
   DateTime _lastUpdate = DateTime.now();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    print('SensorDetailsPage initialized');
     _updateChartData();
-    // Change refresh interval to 5 minutes
-    _refreshTimer = Timer.periodic(const Duration(minutes: 5), (_) {
-      _refreshData();
+    print('Setting up refresh timer');
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && !_isLoading) {
+        _refreshData();
+      }
     });
   }
 
   void _updateChartData() {
+    if (!mounted) return;
     setState(() {
-      // Only use actual sensor data for the charts
-      _tempSpots = widget.sensorData.temperatureHistory
-          .asMap()
-          .entries
-          .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-          .toList();
-      
-      _humiditySpots = widget.sensorData.humidityHistory
-          .asMap()
-          .entries
-          .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-          .toList();
+      // Get the history data and sort it by timestamp
+      final tempHistory = widget.sensorData.temperatureHistory;
+      final humidHistory = widget.sensorData.humidityHistory;
+
+      // Convert history to spots for the charts
+      if (tempHistory.isNotEmpty) {
+        _tempSpots = List.generate(tempHistory.length, (index) {
+          return FlSpot(index.toDouble(), tempHistory[index].value);
+        });
+      } else {
+        // If no history, just show current value
+        _tempSpots = [FlSpot(0, widget.sensorData.temperature.toDouble())];
+      }
+
+      if (humidHistory.isNotEmpty) {
+        _humiditySpots = List.generate(humidHistory.length, (index) {
+          return FlSpot(index.toDouble(), humidHistory[index].value);
+        });
+      } else {
+        // If no history, just show current value
+        _humiditySpots = [FlSpot(0, widget.sensorData.humidity.toDouble())];
+      }
     });
   }
 
   Future<void> _refreshData() async {
-    await widget.sensorProvider.fetchSensorData();
-    if (mounted) {
-      setState(() {
-        _lastUpdate = DateTime.now();
-        _updateChartData();
-      });
+    if (_isLoading) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.sensorProvider.fetchSensorData();
+      if (mounted) {
+        setState(() {
+          _lastUpdate = DateTime.now();
+          _updateChartData();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error refreshing sensor data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  @override
+  void didUpdateWidget(SensorDetailsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update charts when new data arrives
+    if (oldWidget.sensorData != widget.sensorData) {
+      _updateChartData();
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   // --- Chart Helper Functions (assumed to be well-implemented) ---
@@ -248,8 +294,17 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
         iconTheme: IconThemeData(color: AppColors.primary),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: AppColors.primary.withOpacity(0.8)),
-            onPressed: _refreshData,
+            icon: _isLoading 
+              ? SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary.withOpacity(0.8)),
+                  ),
+                )
+              : Icon(Icons.refresh, color: AppColors.primary.withOpacity(0.8)),
+            onPressed: _isLoading ? null : _refreshData,
             tooltip: 'Refresh Data',
           )
         ],
@@ -263,230 +318,241 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
              _ChartCard(
-  title: 'Temperature',
-  currentValue: '${sensorData.temperature}°C',
-  icon: Icons.thermostat_outlined,
-  iconColor: AppColors.temperature,
-  chart: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        '${sensorData.temperature}°C',
-        style: AppTextStyles.display(context).copyWith(
-          color: AppColors.temperature,
-          fontSize: 40,
-        ),
-      ),
-      const SizedBox(height: 4),
-      Text(
-        _getTemperatureStatus(sensorData.temperature.toDouble()),
-        style: AppTextStyles.bodyLarge(context).copyWith(
-          color: AppColors.textSecondary,
-        ),
-      ),
-      const SizedBox(height: 16),
-      SizedBox(
-        height: 180,
-        child: LineChart(
-          LineChartData(
-            minY: 0,
-            maxY: 45,
-            lineBarsData: [
-              LineChartBarData(
-                spots: _tempSpots,
-                isCurved: true,
-                curveSmoothness: 0.25,
-                barWidth: 3.5,
-                color: AppColors.temperature,
-                isStrokeCapRound: true,
-                belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.temperature.withOpacity(0.4),
-                      AppColors.temperature.withOpacity(0.05),
-                    ],
-                  ),
+      title: 'Temperature',
+      currentValue: '${sensorData.temperature.toStringAsFixed(1)}°C',
+      icon: Icons.thermostat_outlined,
+      iconColor: AppColors.temperature,
+      chart: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${sensorData.temperature.toStringAsFixed(1)}°C',
+                style: AppTextStyles.display(context).copyWith(
+                  color: AppColors.temperature,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w700,
                 ),
-                dotData: FlDotData(
-                  show: true,
-                  getDotPainter: (spot, percent, barData, index) {
-                    final isLast = index == _tempSpots.length - 1;
-                    return FlDotCirclePainter(
-                      radius: isLast ? 6 : 0,
-                      color: AppColors.temperature,
-                      strokeWidth: isLast ? 2.5 : 0,
-                      strokeColor: Colors.white,
-                    );
-                  },
+              ),
+              const SizedBox(width: 12),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: sensorData.temperature >= 18 && sensorData.temperature <= 25
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.temperature.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getTemperatureStatus(sensorData.temperature.toDouble()),
+                    style: AppTextStyles.bodyLarge(context).copyWith(
+                      color: sensorData.temperature >= 18 && sensorData.temperature <= 25
+                          ? AppColors.primary
+                          : AppColors.temperature,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  interval: 10,
-                  getTitlesWidget: (val, meta) => _leftTitleWidgets(
-                    context,
-                    val,
-                    meta,
-                    '°C',
-                    textColor: AppColors.temperature.withOpacity(0.7),
-                  ),
-                ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: _tempSpots.length > 1,
-                  reservedSize: 30,
-                  interval: (_tempSpots.length > 1)
-                      ? ((_tempSpots.length - 1) /
-                              (_tempSpots.length > 4
-                                  ? 3
-                                  : (_tempSpots.length - 1)))
-                          .ceilToDouble()
-                          .clamp(1.0, double.infinity)
-                      : 1,
-                  getTitlesWidget: (val, meta) => _bottomTitleWidgets(
-                    context,
-                    val,
-                    meta,
-                    totalSpots: _tempSpots.length,
-                    textColor: AppColors.temperature.withOpacity(0.7),
-                  ),
-                ),
-              ),
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-            ),
-            borderData: FlBorderData(show: false),
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: 10,
-              getDrawingHorizontalLine: (value) => FlLine(
-                color: AppColors.chartGridColor.withOpacity(0.3),
-                strokeWidth: 0.8,
-              ),
-            ),
-            rangeAnnotations: RangeAnnotations(
-              horizontalRangeAnnotations: [
-                HorizontalRangeAnnotation(
-                  y1: 18.0,
-                  y2: 25.0,
-                  color: AppColors.optimalTemperatureRange.withOpacity(0.6),
-                ),
-              ],
-            ),
-            lineTouchData: LineTouchData(
-              enabled: true,
-              handleBuiltInTouches: true,
-              touchTooltipData: LineTouchTooltipData(
-                tooltipBgColor: AppColors.temperature.withOpacity(0.85),
-                tooltipRoundedRadius: 8,
-                tooltipPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
-                  return LineTooltipItem(
-                    '${spot.y.toStringAsFixed(1)}°C',
-                    AppTextStyles.caption(context).copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 180,
+            child: LineChart(
+              LineChartData(
+                minY: 15,
+                maxY: 35,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: _tempSpots,
+                    isCurved: true,
+                    curveSmoothness: 0.4,
+                    barWidth: 3.5,
+                    color: AppColors.temperature,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        bool isLastDot = index == barData.spots.length - 1;
+                        return FlDotCirclePainter(
+                          radius: isLastDot ? 6 : 4.5,
+                          color: AppColors.temperature.withOpacity(isLastDot ? 1.0 : 0.9),
+                          strokeWidth: 1.5,
+                          strokeColor: Colors.white,
+                        );
+                      },
                     ),
-                  );
-                }).toList(),
-              ),
-              getTouchedSpotIndicator: (barData, spotIndexes) {
-                return spotIndexes.map((index) {
-                  return TouchedSpotIndicatorData(
-                    FlLine(
-                      color: AppColors.temperature.withOpacity(0.9),
-                      strokeWidth: 2,
-                      dashArray: [4, 4],
-                    ),
-                    FlDotData(
-                      getDotPainter: (spot, percent, barData, index) =>
-                          FlDotCirclePainter(
-                        radius: 6,
-                        color: AppColors.temperature,
-                        strokeWidth: 2,
-                        strokeColor: Colors.white,
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.temperature.withOpacity(0.45),
+                          AppColors.temperature.withOpacity(0.15),
+                          AppColors.temperature.withOpacity(0.02),
+                        ],
+                        stops: const [0.0, 0.6, 1.0],
                       ),
                     ),
-                  );
-                }).toList();
-              },
+                    shadow: Shadow(
+                      blurRadius: 8.0,
+                      color: AppColors.temperature.withOpacity(0.35),
+                      offset: const Offset(2, 4),
+                    ),
+                  ),
+                ],
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 5,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: AppColors.chartGridColor.withOpacity(0.1),
+                    strokeWidth: 1,
+                    dashArray: [3, 3],
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 45,
+                      interval: 5,
+                      getTitlesWidget: (val, meta) => _leftTitleWidgets(
+                        context,
+                        val,
+                        meta,
+                        '°C',
+                        textColor: AppColors.temperature.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 35,
+                      interval: 2,
+                      getTitlesWidget: (val, meta) {
+                        if (val.toInt() % 2 == 0 && val <= _tempSpots.last.x) {
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            space: 10.0,
+                            child: Text(
+                              '${val.toInt()}h',
+                              style: AppTextStyles.caption(context).copyWith(
+                                color: AppColors.temperature.withOpacity(0.85),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(
+                    color: AppColors.chartGridColor.withOpacity(0.15),
+                    width: 1,
+                  ),
+                ),
+                lineTouchData: LineTouchData(
+                  handleBuiltInTouches: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    tooltipBgColor: AppColors.temperature.withOpacity(0.85),
+                    tooltipRoundedRadius: 8,
+                    getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                      return touchedBarSpots.map((barSpot) {
+                        return LineTooltipItem(
+                          '${barSpot.y.toStringAsFixed(1)}°C  ',
+                          AppTextStyles.bodyLarge(context).copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.right,
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+                rangeAnnotations: RangeAnnotations(
+                  horizontalRangeAnnotations: [
+                    HorizontalRangeAnnotation(
+                      y1: 18.0,
+                      y2: 25.0,
+                      color: AppColors.optimalTemperatureRange.withOpacity(0.3),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          duration: const Duration(milliseconds: 450),
-          curve: Curves.easeInOutCubicEmphasized,
-        ),
+        ],
       ),
-    ],
-  ),
-),
+    ),
+  
 
               const SizedBox(height: 20),
               _ChartCard(
                 title: 'Humidity',
-                currentValue: '${sensorData.humidity}%',
+                currentValue: '${sensorData.humidity.toStringAsFixed(1)}%',
                 icon: Icons.water_drop_outlined,
                 iconColor: AppColors.humidity,
                 chart: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${sensorData.humidity}%',
+                      '${sensorData.humidity.toStringAsFixed(1)}%',
                       style: AppTextStyles.display(context).copyWith(
                         color: AppColors.humidity,
-                        fontSize: 48,
+                        fontSize: 42,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       sensorData.humidity < 30 ? "Very Dry" :
                       sensorData.humidity < 40 ? "Dry" :
                       sensorData.humidity <= 60 ? "Optimal" :
                       sensorData.humidity <= 70 ? "Humid" : "Very Humid",
                       style: AppTextStyles.bodyLarge(context).copyWith(
-                        color: AppColors.textSecondary,
+                        color: AppColors.textSecondary.withOpacity(0.9),
+                        fontSize: 17,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     SizedBox(
-                      height: 100,
+                      height: 180,
                       child: LineChart(
                         LineChartData(
+                          minY: 0,
+                          maxY: 100,
                           lineBarsData: [
                             LineChartBarData(
                               spots: _humiditySpots,
                               isCurved: true,
-                              barWidth: 3,
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.humidity,
-                                  AppColors.humidity.withOpacity(0.7),
-                                ],
-                                stops: const [0.4, 1.0],
-                              ),
+                              curveSmoothness: 0.4,
+                              barWidth: 3.5,
+                              color: AppColors.humidity,
                               isStrokeCapRound: true,
                               dotData: FlDotData(
                                 show: true,
-                                checkToShowDot: (spot, barData) => 
-                                  spot.x == 0 || spot.x == _humiditySpots.length - 1,
                                 getDotPainter: (spot, percent, barData, index) {
+                                  bool isLastDot = index == barData.spots.length - 1;
                                   return FlDotCirclePainter(
-                                    radius: 4,
-                                    color: AppColors.humidity,
-                                    strokeWidth: 2,
+                                    radius: isLastDot ? 6 : 4.5,
+                                    color: AppColors.humidity.withOpacity(isLastDot ? 1.0 : 0.9),
+                                    strokeWidth: 1.5,
                                     strokeColor: Colors.white,
                                   );
                                 },
@@ -497,67 +563,105 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    AppColors.humidity.withOpacity(0.25),
-                                    AppColors.humidity.withOpacity(0.0),
+                                    AppColors.humidity.withOpacity(0.45),
+                                    AppColors.humidity.withOpacity(0.15),
+                                    AppColors.humidity.withOpacity(0.02),
                                   ],
-                                  stops: const [0.2, 0.9],
+                                  stops: const [0.0, 0.6, 1.0],
                                 ),
+                              ),
+                              shadow: Shadow(
+                                blurRadius: 8.0,
+                                color: AppColors.humidity.withOpacity(0.35),
+                                offset: const Offset(2, 4),
                               ),
                             ),
                           ],
                           gridData: FlGridData(
                             show: true,
                             drawVerticalLine: false,
-                            horizontalInterval: 25,
-                            getDrawingHorizontalLine: (value) {
-                              return FlLine(
-                                color: AppColors.chartGridColor.withOpacity(0.15),
-                                strokeWidth: 1,
-                                dashArray: [5, 5],
-                              );
-                            },
+                            horizontalInterval: 20,
+                            getDrawingHorizontalLine: (value) => FlLine(
+                              color: AppColors.chartGridColor.withOpacity(0.1),
+                              strokeWidth: 1,
+                              dashArray: [3, 3],
+                            ),
                           ),
-                          titlesData: FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          minY: 0,
-                          maxY: 100,
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 45,
+                                interval: 20,
+                                getTitlesWidget: (val, meta) => _leftTitleWidgets(
+                                  context,
+                                  val,
+                                  meta,
+                                  '%',
+                                  textColor: AppColors.humidity.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 35,
+                                interval: 2,
+                                getTitlesWidget: (val, meta) {
+                                  if (val.toInt() % 2 == 0 && val <= _humiditySpots.last.x) {
+                                    return SideTitleWidget(
+                                      axisSide: meta.axisSide,
+                                      space: 10.0,
+                                      child: Text(
+                                        '${val.toInt()}h',
+                                        style: AppTextStyles.caption(context).copyWith(
+                                          color: AppColors.humidity.withOpacity(0.85),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          ),
+                          borderData: FlBorderData(
+                            show: true,
+                            border: Border.all(
+                              color: AppColors.chartGridColor.withOpacity(0.15),
+                              width: 1,
+                            ),
+                          ),
                           lineTouchData: LineTouchData(
-                            enabled: true,
+                            handleBuiltInTouches: true,
                             touchTooltipData: LineTouchTooltipData(
-                              tooltipBgColor: AppColors.humidity.withOpacity(0.8),
+                              tooltipBgColor: AppColors.humidity.withOpacity(0.85),
                               tooltipRoundedRadius: 8,
-                              getTooltipItems: (List<LineBarSpot> spots) {
-                                return spots.map((spot) {
+                              getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                                return touchedBarSpots.map((barSpot) {
                                   return LineTooltipItem(
-                                    '${spot.y.toStringAsFixed(1)}%',
-                                    TextStyle(
+                                    '${barSpot.y.toStringAsFixed(1)}%  ',
+                                    AppTextStyles.bodyLarge(context).copyWith(
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
+                                    textAlign: TextAlign.right,
                                   );
                                 }).toList();
                               },
                             ),
-                            getTouchedSpotIndicator: (barData, spotIndexes) {
-                              return spotIndexes.map((index) {
-                                return TouchedSpotIndicatorData(
-                                  FlLine(
-                                    color: AppColors.humidity,
-                                    strokeWidth: 2,
-                                  ),
-                                  FlDotData(
-                                    getDotPainter: (spot, percent, barData, index) =>
-                                      FlDotCirclePainter(
-                                        radius: 5,
-                                        color: AppColors.humidity,
-                                        strokeWidth: 2,
-                                        strokeColor: Colors.white,
-                                      ),
-                                  ),
-                                );
-                              }).toList();
-                            },
+                          ),
+                          rangeAnnotations: RangeAnnotations(
+                            horizontalRangeAnnotations: [
+                              HorizontalRangeAnnotation(
+                                y1: 40.0,
+                                y2: 60.0,
+                                color: AppColors.optimalHumidityRange.withOpacity(0.3),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -572,31 +676,47 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                 icon: Icons.eco_outlined,
                 iconColor: AppColors.soilMoisture,
                 chart: SizedBox(
-                  height: 220, 
+                  height: 220,
                   child: BarChart(
                     BarChartData(
                       alignment: BarChartAlignment.spaceAround,
-                      maxY: 100, minY: 0,
+                      maxY: 100,
+                      minY: 0,
                       barGroups: [
-                        _makeBarGroupData(context, 0, sensorData.soilMoisture1.toDouble()),
-                        _makeBarGroupData(context, 1, sensorData.soilMoisture2.toDouble()),
-                        _makeBarGroupData(context, 2, sensorData.soilMoisture3.toDouble()),
-                        _makeBarGroupData(context, 3, sensorData.soilMoisture4.toDouble()),
+                        _makeEnhancedBarGroupData(context, 0, sensorData.soilMoisture1.toDouble()),
+                        _makeEnhancedBarGroupData(context, 1, sensorData.soilMoisture2.toDouble()),
+                        _makeEnhancedBarGroupData(context, 2, sensorData.soilMoisture3.toDouble()),
+                        _makeEnhancedBarGroupData(context, 3, sensorData.soilMoisture4.toDouble()),
                       ],
                       titlesData: FlTitlesData(
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
-                            showTitles: true, reservedSize: 40,
-                            interval: 20,
-                            getTitlesWidget: (val, meta) => _leftTitleWidgets(context, val, meta, '%', textColor: AppColors.soilMoisture.withOpacity(0.8)),
+                            showTitles: true,
+                            reservedSize: 36,
+                            interval: 25,
+                            getTitlesWidget: (val, meta) => _leftTitleWidgets(
+                              context,
+                              val,
+                              meta,
+                              '%',
+                              textColor: AppColors.soilMoisture.withOpacity(0.8),
+                            ),
                           ),
                         ),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
-                            showTitles: true, reservedSize: 32,
+                            showTitles: true,
+                            reservedSize: 32,
                             getTitlesWidget: (double value, TitleMeta meta) {
-                              final style = AppTextStyles.chartAxis(context).copyWith(color: AppColors.soilMoisture.withOpacity(0.8));
-                              return SideTitleWidget(axisSide: meta.axisSide, space: 8, child: Text('S${value.toInt() + 1}', style: style));
+                              final style = AppTextStyles.chartAxis(context).copyWith(
+                                color: AppColors.soilMoisture.withOpacity(0.9),
+                                fontWeight: FontWeight.w600,
+                              );
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                space: 8,
+                                child: Text('S${value.toInt() + 1}', style: style),
+                              );
                             },
                           ),
                         ),
@@ -605,49 +725,73 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                       ),
                       borderData: FlBorderData(show: false),
                       gridData: FlGridData(
-                        show: true, drawVerticalLine: false, horizontalInterval: 20,
-                        getDrawingHorizontalLine: (value) => FlLine(color: AppColors.chartGridColor.withOpacity(0.5), strokeWidth: 0.7),
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 25,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: AppColors.chartGridColor.withOpacity(0.4),
+                          strokeWidth: 0.7,
+                        ),
                       ),
                       rangeAnnotations: RangeAnnotations(
                         horizontalRangeAnnotations: [
-                          HorizontalRangeAnnotation(y1: 30.0, y2: 70.0, color: AppColors.optimalRangeBackground.withOpacity(0.8)),
-                          HorizontalRangeAnnotation(y1: 0, y2: 15.0, color: AppColors.soilMoistureCritical.withOpacity(0.1)),
-                          HorizontalRangeAnnotation(y1: 85.0, y2: 100, color: AppColors.soilMoistureCritical.withOpacity(0.1)),
+                          HorizontalRangeAnnotation(
+                            y1: 30.0,
+                            y2: 70.0,
+                            color: AppColors.optimalRangeBackground.withOpacity(0.4),
+                          ),
+                          HorizontalRangeAnnotation(
+                            y1: 0,
+                            y2: 15.0,
+                            color: AppColors.soilMoistureCritical.withOpacity(0.3),
+                          ),
+                          HorizontalRangeAnnotation(
+                            y1: 85.0,
+                            y2: 100,
+                            color: AppColors.soilMoistureCritical.withOpacity(0.3),
+                          ),
                         ],
                       ),
                       barTouchData: BarTouchData(
                         enabled: true,
                         touchTooltipData: BarTouchTooltipData(
+                          tooltipRoundedRadius: 8.0,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             String sensorLabel = 'Sensor ${group.x.toInt() + 1}';
                             String statusText;
-                            const double smCriticalDry = 15.0, smOptimalMin = 30.0, 
-                                  smOptimalMax = 70.0, smCriticalWet = 85.0;
-                            if (rod.toY < smCriticalDry) statusText = 'Critically Dry';
-                            else if (rod.toY < smOptimalMin) statusText = 'Dry';
-                            else if (rod.toY <= smOptimalMax) statusText = 'Optimal';
-                            else if (rod.toY <= smCriticalWet) statusText = 'Wet';
+                            const double smCriticalDry = 15.0,
+                                smOptimalMin = 30.0,
+                                smOptimalMax = 70.0,
+                                smCriticalWet = 85.0;
+                            final double currentY = rod.toY;
+
+                            if (currentY < smCriticalDry) statusText = 'Critically Dry';
+                            else if (currentY < smOptimalMin) statusText = 'Dry';
+                            else if (currentY <= smOptimalMax) statusText = 'Optimal';
+                            else if (currentY <= smCriticalWet) statusText = 'Wet';
                             else statusText = 'Critically Wet';
+
                             return BarTooltipItem(
                               '$sensorLabel\n',
-                              AppTextStyles.caption(context).copyWith(
-                                color: Colors.white, 
-                                fontWeight: FontWeight.bold, 
-                                fontSize: 13
+                              AppTextStyles.bodyLarge(context).copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
                               ),
                               children: <TextSpan>[
                                 TextSpan(
-                                  text: '${rod.toY.round()}% - $statusText',
+                                  text: '${currentY.round()}% - $statusText',
                                   style: AppTextStyles.caption(context).copyWith(
-                                    color: Colors.white, 
+                                    color: Colors.white,
                                     fontSize: 12,
-                                    height: 1.3,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.4,
                                   ),
                                 ),
                               ],
                             );
                           },
-                          tooltipPadding: const EdgeInsets.all(10),
+                          tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           tooltipMargin: 8,
                           tooltipBgColor: AppColors.soilMoisture.withOpacity(0.9),
                         ),
@@ -660,6 +804,38 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
           ),
         ),
       ),
+    );
+  }
+
+  BarChartGroupData _makeEnhancedBarGroupData(BuildContext context, int x, double y) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final barColor = _getSoilMoistureBarColor(y);
+    final lightBarColor = barColor.withOpacity(0.7);
+    
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y.isNaN || y.isInfinite ? 0 : y,
+          gradient: LinearGradient(
+            colors: [
+              lightBarColor,
+              barColor,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          width: screenWidth * 0.04,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(5),
+            topRight: Radius.circular(5),
+          ),
+          borderSide: BorderSide(
+            color: barColor.withOpacity(0.5),
+            width: 0.5,
+          ),
+        ),
+      ],
     );
   }
 }

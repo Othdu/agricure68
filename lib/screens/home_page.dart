@@ -7,11 +7,20 @@ import '../providers/farm_data_provider.dart'; // Ensure this path is correct
 import '../screens/profile_page.dart';
 import '../screens/contact_us_page.dart';
 import '../widgets/app_drawer.dart';
+import 'dart:async';
 
 // AppColors, AppTextStyles, _CustomCard, _SensorDataWidget, _StatusIcon
 // and other helper build methods (_buildWeatherWidget, _buildCropCalendarWidget, etc.)
 // remain largely the same as in the previous enhanced version.
 // I will include them here for completeness, but the main structural change will be in HomePage.
+Color _getWeatherColor(String condition) {
+  final lower = condition.toLowerCase();
+  if (lower.contains('sun') || lower.contains('clear')) return AppColors.accent;
+  if (lower.contains('cloud')) return Colors.blueGrey;
+  if (lower.contains('rain')) return Colors.lightBlue.shade700;
+  if (lower.contains('snow')) return Colors.indigo.shade400;
+  return AppColors.primary;
+}
 
 // AppColors and AppTextStyles classes remain the same
 class AppColors {
@@ -50,8 +59,14 @@ class AppTextStyles {
             color: AppColors.textSecondary,
             fontSize: 16,
           );
+
   static TextStyle bodyRegular(BuildContext context) =>
       Theme.of(context).textTheme.bodyMedium!.copyWith(
+            color: AppColors.textSecondary,
+          );
+
+  static TextStyle bodySmall(BuildContext context) =>
+      Theme.of(context).textTheme.bodySmall!.copyWith(
             color: AppColors.textSecondary,
           );
 
@@ -61,6 +76,16 @@ class AppTextStyles {
           );
 }
 
+// Add the weather icon method
+IconData _getWeatherIcon(String condition) {
+  final lower = condition.toLowerCase();
+  if (lower.contains('sun') || lower.contains('clear')) return Icons.wb_sunny;
+  if (lower.contains('cloud')) return Icons.cloud;
+  if (lower.contains('rain')) return Icons.thunderstorm;
+  if (lower.contains('snow')) return Icons.ac_unit;
+  if (lower.contains('wind')) return Icons.air;
+  return Icons.wb_sunny;
+}
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -89,70 +114,102 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData) {
-    return _CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(context, 'Weather Overview', Icons.wb_sunny_outlined, AppColors.accent, AppColors.accent),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Column(
+Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {VoidCallback? onTap}) {
+  final IconData weatherIcon = _getWeatherIcon(farmData.weatherCondition);
+  final Color weatherColor = _getWeatherColor(farmData.weatherCondition);
+
+  return _CustomCard(
+    onTap: onTap,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          context,
+          'Weather Overview',
+          Icons.wb_sunny_outlined,
+          AppColors.primary,
+          weatherColor,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            // Left: Icon + Temp
+            Expanded(
+              flex: 2,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Icon(weatherIcon, size: 52, color: weatherColor),
+                  const SizedBox(height: 8),
                   Text(
                     farmData.temperature,
                     style: AppTextStyles.headline(context).copyWith(
                       fontSize: 40,
-                      color: AppColors.accent,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     farmData.weatherCondition,
-                    style: AppTextStyles.bodyLarge(context).copyWith(color: AppColors.textPrimary),
+                    style: AppTextStyles.bodyLarge(context).copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
-              Column(
+            ),
+            // Right: Humidity + Wind
+            Expanded(
+              flex: 2,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildWeatherDetail('Humidity', farmData.humidity, Icons.water_drop_outlined),
-                  const SizedBox(height: 10),
-                  _buildWeatherDetail('Wind', farmData.wind, Icons.air_outlined),
+                  _buildWeatherDetail(
+                    context,
+                    'Humidity',
+                    farmData.humidity,
+                    Icons.water_drop_outlined,
+                    AppColors.textSecondary,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildWeatherDetail(
+                    context,
+                    'Wind',
+                    farmData.wind,
+                    Icons.air_outlined,
+                    AppColors.textSecondary,
+                  ),
                 ],
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeatherDetail(String label, String value, IconData icon) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: AppColors.textSecondary),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-            fontSize: 14,
-          ),
+            ),
+          ],
         ),
       ],
-    );
-  }
+    ),
+  );
+}
+
+ Widget _buildWeatherDetail(BuildContext context, String label, String value, IconData icon, Color color) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, color: color, size: 20),
+      const SizedBox(width: 6),
+      Text(
+        '$label: ',
+        style: AppTextStyles.bodySmall(context).copyWith(color: color),
+      ),
+      Text(
+        value,
+        style: AppTextStyles.bodyLarge(context).copyWith(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  );
+}
 
   Widget _buildCropCalendarWidget(BuildContext context, FarmDataProvider farmData) {
     return _CustomCard(
@@ -456,7 +513,10 @@ class HomePage extends StatelessWidget {
                   _buildTabContent(context, children: [
                     _SensorDataWidget(),
                     const SizedBox(height: 20),
-                    _buildWeatherWidget(context, farmData),
+_buildWeatherWidget(context, farmData, onTap: () {
+  // Navigate or show full forecast
+}),
+
                   ]),
                   _buildTabContent(context, children: [
                     _buildCropCalendarWidget(context, farmData),
@@ -529,58 +589,102 @@ class _SensorDataWidget extends StatefulWidget {
 }
 
 class _SensorDataWidgetState extends State<_SensorDataWidget> {
-  bool _fetched = false;
+  Timer? _refreshTimer;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_fetched) {
-      _fetched = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Provider.of<SensorDataProvider>(context, listen: false).fetchSensorData();
-        }
-      });
-    }
+  void initState() {
+    super.initState();
+    _setupBackgroundRefresh();
   }
 
-  Color _getStatusColor(SensorData data) {
-    final lowMoisture = _isAnySoilMoistureLow(data);
-    final lowHumidity = data.humidity < 30;
-    final lowTemp = data.temperature < 5;
-    final highTemp = data.temperature > 35;
-
-    if (lowMoisture || lowHumidity || lowTemp || highTemp) return AppColors.warning;
-    return AppColors.success;
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
-  String _getStatusMessage(SensorData data) {
-    List<String> issues = [];
-    if (_isAnySoilMoistureLow(data)) issues.add("low soil moisture");
-    if (data.humidity < 30) issues.add("low humidity");
-    if (data.temperature < 5) issues.add("low temperature");
-    if (data.temperature > 35) issues.add("high temperature");
-
-    if (issues.isEmpty) return 'All systems normal. Everything looks good!';
-    if (issues.length == 1) return 'Attention: ${issues.first} detected.';
-    if (issues.length == 2) return 'Attention: ${issues.join(' and ')} detected.';
-    return 'Multiple issues: ${issues.join(', ')}. Please check details.';
+  void _setupBackgroundRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        Provider.of<SensorDataProvider>(context, listen: false).fetchSensorData();
+      }
+    });
   }
 
-   bool _isAnySoilMoistureLow(SensorData data) {
-    return data.soilMoisture1 < 30 || data.soilMoisture2 < 30 || data.soilMoisture3 < 30 || data.soilMoisture4 < 30;
+  Widget _buildLoadingContent(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 40.0),
+        child: CircularProgressIndicator(),
+      ),
+    );
   }
 
-  String _lowestMoistureLabel(SensorData data) {
-    final lowest = _lowestMoistureValue(data);
-    if (lowest < 20) return 'Critical';
-    if (lowest < 30) return 'Low';
-    return 'OK';
+  Widget _buildErrorContent(BuildContext context, String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: AppColors.error.withOpacity(0.8)),
+            const SizedBox(height: 16),
+            Text(
+              error,
+              style: AppTextStyles.bodyLarge(context).copyWith(color: AppColors.error),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Provider.of<SensorDataProvider>(context, listen: false).fetchSensorData();
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  int _lowestMoistureValue(SensorData data) {
-    final values = [data.soilMoisture1, data.soilMoisture2, data.soilMoisture3, data.soilMoisture4];
-    return values.reduce((a, b) => a < b ? a : b);
+  @override
+  Widget build(BuildContext context) {
+    final sensorProvider = Provider.of<SensorDataProvider>(context);
+    final data = sensorProvider.sensorData;
+
+    return _CustomCard(
+      onTap: data == null ? null : () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SensorDetailsPage(
+              sensorData: data,
+              sensorProvider: sensorProvider,
+            ),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context, sensorProvider, data),
+          if (sensorProvider.isOffline && sensorProvider.lastUpdate != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: _buildOfflineBanner(context, sensorProvider.lastUpdate),
+            ),
+          const SizedBox(height: 20),
+          if (sensorProvider.isLoading && data == null)
+            _buildLoadingContent(context)
+          else if (sensorProvider.error != null && data == null)
+            _buildErrorContent(context, sensorProvider.error!)
+          else if (data == null)
+            _buildNoDataContent(context)
+          else
+            _buildDataContent(context, data),
+        ],
+      ),
+    );
   }
 
   Widget _buildHeader(BuildContext context, SensorDataProvider provider, SensorData? data) {
@@ -601,49 +705,7 @@ class _SensorDataWidgetState extends State<_SensorDataWidget> {
             Text('Sensor Overview', style: AppTextStyles.title(context)),
           ],
         ),
-        if (data != null || provider.error != null)
-          IconButton(
-            icon: Icon(Icons.refresh, color: AppColors.iconColor),
-            onPressed: () => provider.fetchSensorData(),
-            tooltip: 'Refresh Data',
-          ),
       ],
-    );
-  }
-
-  Widget _buildLoadingIndicator(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 40.0),
-        child: CircularProgressIndicator(color: AppColors.primary),
-      ),
-    );
-  }
-
-  Widget _buildErrorContent(BuildContext context, String error, VoidCallback onRetry) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: AppColors.error, size: 40),
-            const SizedBox(height: 12),
-            Text(
-              error,
-              style: AppTextStyles.bodyLarge(context).copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text("Retry"),
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            )
-          ],
-        ),
-      ),
     );
   }
 
@@ -656,6 +718,82 @@ class _SensorDataWidgetState extends State<_SensorDataWidget> {
           style: AppTextStyles.bodyRegular(context).copyWith(fontStyle: FontStyle.italic),
         ),
       ),
+    );
+  }
+
+  Widget _buildOfflineBanner(BuildContext context, DateTime? lastUpdate) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withOpacity(0.1),
+        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, color: AppColors.warning, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Offline Mode',
+                  style: AppTextStyles.bodyRegular(context).copyWith(
+                    color: AppColors.warningText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (lastUpdate != null)
+                  Text(
+                    'Last updated: ${_formatLastUpdate(lastUpdate)}',
+                    style: AppTextStyles.bodyRegular(context).copyWith(
+                      color: AppColors.warningText.withOpacity(0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatLastUpdate(DateTime lastUpdate) {
+    final now = DateTime.now();
+    final difference = now.difference(lastUpdate);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      final minutes = difference.inMinutes;
+      return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} ago';
+    } else if (difference.inDays < 1) {
+      final hours = difference.inHours;
+      return '$hours ${hours == 1 ? 'hour' : 'hours'} ago';
+    } else {
+      final days = difference.inDays;
+      return '$days ${days == 1 ? 'day' : 'days'} ago';
+    }
+  }
+
+  Widget _buildDataContent(BuildContext context, SensorData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStatusSummary(context, data),
+        const SizedBox(height: 24),
+        _buildReadingsOverview(context, data),
+        const SizedBox(height: 20),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            'Tap for more details →',
+            style: AppTextStyles.caption(context).copyWith(color: AppColors.primary),
+          ),
+        ),
+      ],
     );
   }
 
@@ -694,7 +832,7 @@ class _SensorDataWidgetState extends State<_SensorDataWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Text(
+        Text(
           "Key Readings",
           style: AppTextStyles.bodyLarge(context).copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
@@ -726,74 +864,43 @@ class _SensorDataWidgetState extends State<_SensorDataWidget> {
     );
   }
 
-  Widget _buildDataContent(BuildContext context, SensorData data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildStatusSummary(context, data),
-        const SizedBox(height: 24),
-        _buildReadingsOverview(context, data),
-        const SizedBox(height: 20),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            'Tap for more details →',
-            style: AppTextStyles.caption(context).copyWith(color: AppColors.primary),
-          ),
-        ),
-      ],
-    );
-  }
-  
-  BarChartGroupData _makeBarGroupData(int x, double y, Color color) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: color,
-          width: 20,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(6)),
-        ),
-      ],
-    );
+  Color _getStatusColor(SensorData data) {
+    final lowMoisture = _isAnySoilMoistureLow(data);
+    final lowHumidity = data.humidity < 30;
+    final lowTemp = data.temperature < 5;
+    final highTemp = data.temperature > 35;
+
+    if (lowMoisture || lowHumidity || lowTemp || highTemp) return AppColors.warning;
+    return AppColors.success;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final sensorProvider = Provider.of<SensorDataProvider>(context);
-    final data = sensorProvider.sensorData;
+  String _getStatusMessage(SensorData data) {
+    List<String> issues = [];
+    if (_isAnySoilMoistureLow(data)) issues.add("low soil moisture");
+    if (data.humidity < 30) issues.add("low humidity");
+    if (data.temperature < 5) issues.add("low temperature");
+    if (data.temperature > 35) issues.add("high temperature");
 
-    return _CustomCard(
-      onTap: data != null
-          ? () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SensorDetailsPage(
-                    sensorData: data,
-                    sensorProvider: sensorProvider, 
-                  ),
-                ),
-              );
-            }
-          : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, sensorProvider, data),
-          const SizedBox(height: 20),
-          if (sensorProvider.isLoading)
-            _buildLoadingIndicator(context)
-          else if (sensorProvider.error != null)
-            _buildErrorContent(context, sensorProvider.error!, () => sensorProvider.fetchSensorData())
-          else if (data == null)
-            _buildNoDataContent(context)
-          else
-            _buildDataContent(context, data),
-        ],
-      ),
-    );
+    if (issues.isEmpty) return 'All systems normal. Everything looks good!';
+    if (issues.length == 1) return 'Attention: ${issues.first} detected.';
+    if (issues.length == 2) return 'Attention: ${issues.join(' and ')} detected.';
+    return 'Multiple issues: ${issues.join(', ')}. Please check details.';
+  }
+
+  bool _isAnySoilMoistureLow(SensorData data) {
+    return data.soilMoisture1 < 30 || data.soilMoisture2 < 30 || data.soilMoisture3 < 30 || data.soilMoisture4 < 30;
+  }
+
+  String _lowestMoistureLabel(SensorData data) {
+    final lowest = _lowestMoistureValue(data);
+    if (lowest < 20) return 'Critical';
+    if (lowest < 30) return 'Low';
+    return 'OK';
+  }
+
+  int _lowestMoistureValue(SensorData data) {
+    final values = [data.soilMoisture1, data.soilMoisture2, data.soilMoisture3, data.soilMoisture4];
+    return values.reduce((a, b) => a < b ? a : b);
   }
 }
 
