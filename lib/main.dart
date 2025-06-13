@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'providers/farm_data_provider.dart';
 import 'plant_data_provider.dart';  // Updated import
 import 'screens/home_page.dart';
+import 'screens/splash_screen.dart';
+
 // Import AppColors if you need it for global theme setup, otherwise it's encapsulated
 // import 'core/theme/app_colors.dart';
 
@@ -43,7 +45,10 @@ class MyApp extends StatelessWidget {
             titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)
           )
         ),
-        home: const HomePage(),
+        home: const SplashScreen(),
+        routes: {
+          '/login': (context) => const HomePage(),
+        },
         debugShowCheckedModeBanner: false,
       ),
     );

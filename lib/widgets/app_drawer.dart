@@ -12,11 +12,11 @@ class AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: <Widget>[
           UserAccountsDrawerHeader(
-            accountName: const Padding(
-              padding: EdgeInsets.only(top: 8.0),
+            accountName: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                "AgriUser",
-                style: TextStyle(
+                ProfilePage.userData['name']!,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                   color: Colors.white,
@@ -24,7 +24,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
             accountEmail: Text(
-              "agri.user@example.com",
+              ProfilePage.userData['email']!,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withOpacity(0.85),
@@ -36,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>  ProfilePage(),
+                    builder: (context) => const ProfilePage(),
                   ),
                 );
               },

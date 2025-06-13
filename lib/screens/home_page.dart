@@ -90,11 +90,8 @@ IconData _getWeatherIcon(String condition) {
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  // Methods like _buildSectionHeader, _buildWeatherWidget, _buildCropCalendarWidget, etc.
-  // are kept as they are essential for building the content within the tabs.
-  // These methods will now be called within the TabBarView children.
-
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, Color iconBgColor, Color iconColor) {
+  // Make the method static and accessible
+  static Widget _buildSectionHeader(BuildContext context, String title, IconData icon, Color iconBgColor, Color iconColor) {
     return Row(
       children: [
         Container(
@@ -114,109 +111,119 @@ class HomePage extends StatelessWidget {
     );
   }
 
-Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {VoidCallback? onTap}) {
-  final IconData weatherIcon = _getWeatherIcon(farmData.weatherCondition);
-  final Color weatherColor = _getWeatherColor(farmData.weatherCondition);
+  // Methods like _buildSectionHeader, _buildWeatherWidget, _buildCropCalendarWidget, etc.
+  // are kept as they are essential for building the content within the tabs.
+  // These methods will now be called within the TabBarView children.
 
-  return _CustomCard(
-    onTap: onTap,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {VoidCallback? onTap}) {
+    final IconData weatherIcon = _getWeatherIcon(farmData.weatherCondition);
+    final Color weatherColor = _getWeatherColor(farmData.weatherCondition);
+
+    return _CustomCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HomePage._buildSectionHeader(
+            context,
+            'Weather Overview',
+            Icons.wb_sunny_outlined,
+            AppColors.primary,
+            weatherColor,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Left: Icon + Temp
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(weatherIcon, size: 52, color: weatherColor),
+                    const SizedBox(height: 8),
+                    Text(
+                      farmData.temperature,
+                      style: AppTextStyles.headline(context).copyWith(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      farmData.weatherCondition,
+                      style: AppTextStyles.bodyLarge(context).copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Right: Humidity + Wind
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildWeatherDetail(
+                      context,
+                      'Humidity',
+                      farmData.humidity,
+                      Icons.water_drop_outlined,
+                      AppColors.textSecondary,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildWeatherDetail(
+                      context,
+                      'Wind',
+                      farmData.wind,
+                      Icons.air_outlined,
+                      AppColors.textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherDetail(BuildContext context, String label, String value, IconData icon, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _buildSectionHeader(
-          context,
-          'Weather Overview',
-          Icons.wb_sunny_outlined,
-          AppColors.primary,
-          weatherColor,
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: AppTextStyles.bodySmall(context).copyWith(color: color),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            // Left: Icon + Temp
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(weatherIcon, size: 52, color: weatherColor),
-                  const SizedBox(height: 8),
-                  Text(
-                    farmData.temperature,
-                    style: AppTextStyles.headline(context).copyWith(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    farmData.weatherCondition,
-                    style: AppTextStyles.bodyLarge(context).copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Right: Humidity + Wind
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _buildWeatherDetail(
-                    context,
-                    'Humidity',
-                    farmData.humidity,
-                    Icons.water_drop_outlined,
-                    AppColors.textSecondary,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildWeatherDetail(
-                    context,
-                    'Wind',
-                    farmData.wind,
-                    Icons.air_outlined,
-                    AppColors.textSecondary,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Text(
+          value,
+          style: AppTextStyles.bodyLarge(context).copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
-    ),
-  );
-}
-
- Widget _buildWeatherDetail(BuildContext context, String label, String value, IconData icon, Color color) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(icon, color: color, size: 20),
-      const SizedBox(width: 6),
-      Text(
-        '$label: ',
-        style: AppTextStyles.bodySmall(context).copyWith(color: color),
-      ),
-      Text(
-        value,
-        style: AppTextStyles.bodyLarge(context).copyWith(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ],
-  );
-}
+    );
+  }
 
   Widget _buildCropCalendarWidget(BuildContext context, FarmDataProvider farmData) {
     return _CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(context, 'Crop Calendar', Icons.calendar_today_outlined, AppColors.primary, AppColors.primary),
+          HomePage._buildSectionHeader(
+            context,
+            'Crop Calendar',
+            Icons.calendar_today_outlined,
+            AppColors.primary,
+            AppColors.primary,
+          ),
           const SizedBox(height: 16),
           if (farmData.cropCalendar.isEmpty)
             Padding(
@@ -278,7 +285,13 @@ Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {Voi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(context, 'Market Prices', Icons.trending_up_outlined, AppColors.accent, AppColors.accent),
+          HomePage._buildSectionHeader(
+            context,
+            'Market Prices',
+            Icons.trending_up_outlined,
+            AppColors.accent,
+            AppColors.accent,
+          ),
           const SizedBox(height: 16),
             if (farmData.marketPrices.isEmpty)
             Padding(
@@ -343,7 +356,13 @@ Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {Voi
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader(context, 'Farm Stats', Icons.bar_chart_outlined, Colors.blueGrey, Colors.blueGrey),
+            HomePage._buildSectionHeader(
+              context,
+              'Farm Stats',
+              Icons.bar_chart_outlined,
+              Colors.blueGrey,
+              Colors.blueGrey,
+            ),
             const SizedBox(height: 16),
             Center(child: Text("Farm statistics not available.", style: AppTextStyles.bodyRegular(context))),
           ],
@@ -354,7 +373,13 @@ Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {Voi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(context, 'Farm Stats', Icons.bar_chart_outlined, statColor, statColor),
+          HomePage._buildSectionHeader(
+            context,
+            'Farm Stats',
+            Icons.bar_chart_outlined,
+            statColor,
+            statColor,
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -408,7 +433,13 @@ Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {Voi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(context, 'Quick Tips', Icons.lightbulb_outline, tipColor, tipColor),
+          HomePage._buildSectionHeader(
+            context,
+            'Quick Tips',
+            Icons.lightbulb_outline,
+            tipColor,
+            tipColor,
+          ),
           const SizedBox(height: 16),
           if (farmData.quickTips.isEmpty)
             Padding(
@@ -513,10 +544,11 @@ Widget _buildWeatherWidget(BuildContext context, FarmDataProvider farmData, {Voi
                   _buildTabContent(context, children: [
                     _SensorDataWidget(),
                     const SizedBox(height: 20),
-_buildWeatherWidget(context, farmData, onTap: () {
-  // Navigate or show full forecast
-}),
-
+                    _buildWeatherWidget(context, farmData, onTap: () {
+                      // Navigate or show full forecast
+                    }),
+                    const SizedBox(height: 20),
+                    const _FirebaseConfigWidget(),
                   ]),
                   _buildTabContent(context, children: [
                     _buildCropCalendarWidget(context, farmData),
@@ -955,6 +987,122 @@ class _StatusIcon extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// Add new FirebaseConfigWidget class
+class _FirebaseConfigWidget extends StatelessWidget {
+  const _FirebaseConfigWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return _CustomCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HomePage._buildSectionHeader(
+            context,
+            'Firebase Models',
+            Icons.storage_outlined,
+            Colors.blue,
+            Colors.blue,
+          ),
+          const SizedBox(height: 16),
+          _buildModelSection(
+            'Authentication',
+            [
+              _buildModelItem('User Model', 'users'),
+              _buildModelItem('Auth Settings', 'auth_settings'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildModelSection(
+            'Farm Data',
+            [
+              _buildModelItem('Crops', 'crops'),
+              _buildModelItem('Soil Data', 'soil_data'),
+              _buildModelItem('Weather Data', 'weather_data'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildModelSection(
+            'Sensor Data',
+            [
+              _buildModelItem('Temperature', 'temperature_readings'),
+              _buildModelItem('Humidity', 'humidity_readings'),
+              _buildModelItem('Soil Moisture', 'moisture_readings'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildModelSection(
+            'Market Data',
+            [
+              _buildModelItem('Crop Prices', 'crop_prices'),
+              _buildModelItem('Market Trends', 'market_trends'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModelSection(String title, List<Widget> models) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...models,
+      ],
+    );
+  }
+
+  Widget _buildModelItem(String name, String collection) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.data_object, size: 20, color: Colors.blue.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Collection: $collection',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+        ],
+      ),
     );
   }
 }

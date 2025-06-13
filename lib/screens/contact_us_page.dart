@@ -352,6 +352,17 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
                             ),
                           ],
                         ),
+                       Center(
+  child: FractionallySizedBox(
+    widthFactor: 0.6,          // 60 % of the parent’s width
+    alignment: Alignment.center, // optional—Center already does this
+    child: Image.asset(
+      'assets/images/AXCESS_LOGO_1.png',
+      fit: BoxFit.contain,
+    ),
+  ),
+),
+
                         const SizedBox(height: 20),
                         _buildContactItem(
                           icon: Icons.email_outlined,
