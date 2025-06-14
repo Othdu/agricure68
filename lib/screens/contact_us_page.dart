@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../core/localization/app_localizations.dart';
 
 class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
@@ -154,6 +155,7 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
         });
 
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(_submissionError ?? 'Failed to send message.'),
@@ -173,6 +175,8 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
   }
 
   void _showSuccessDialog() {
+    final l10n = AppLocalizations.of(context);
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -182,12 +186,12 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
             children: [
               Icon(Icons.check_circle, color: AppColors.success, size: 30),
               const SizedBox(width: 10),
-              const Text('Thank You!'),
+              Text(l10n.thankYou),
             ],
           ),
-          content: const Text(
-            'Your message has been sent successfully. We will get back to you soon.',
-            style: TextStyle(fontSize: 16),
+          content: Text(
+            l10n.messageSentSuccessfully,
+            style: const TextStyle(fontSize: 16),
           ),
           actions: [
             TextButton(
@@ -259,9 +263,10 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
         );
       } else {
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Could not launch $urlString'),
+              content: Text('${l10n.couldNotLaunch} $urlString'),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
@@ -270,9 +275,10 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error launching $urlString: $e'),
+            content: Text('${l10n.errorLaunching} $urlString: $e'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -308,9 +314,11 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Contact Us'),
+        title: Text(l10n.contactUs),
         backgroundColor: AppColors.primaryDark,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -354,7 +362,7 @@ class _ContactUsPageState extends State<ContactUsPage> with SingleTickerProvider
                         ),
                        Center(
   child: FractionallySizedBox(
-    widthFactor: 0.6,          // 60 % of the parent’s width
+    widthFactor: 0.6,          // 60 % of the parent's width
     alignment: Alignment.center, // optional—Center already does this
     child: Image.asset(
       'assets/images/AXCESS_LOGO_1.png',

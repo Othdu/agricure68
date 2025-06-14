@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/farm_data_provider.dart';
+import 'providers/auth_provider.dart';
 import 'plant_data_provider.dart';  // Updated import
 import 'screens/home_page.dart';
 import 'screens/splash_screen.dart';
+import 'screens/settings_page.dart';
+import 'screens/login_page.dart';
+import 'screens/signup_page.dart';
+import 'core/theme/theme_provider.dart';
+import 'core/theme/app_colors.dart';
+import 'core/localization/app_localizations.dart';
+import 'core/accessibility/accessibility_provider.dart';
 
 // Import AppColors if you need it for global theme setup, otherwise it's encapsulated
 // import 'core/theme/app_colors.dart';
@@ -29,27 +37,62 @@ class MyApp extends StatelessWidget {
             return provider;
           },
         ),
-      ],
-      child: MaterialApp(
-        title: 'AgriCure',
-        theme: ThemeData(
-          // You can define your global theme here using AppColors if needed
-          // primarySwatch: MaterialColor(AppColors.primary.value, { ... }),
-          // colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-          useMaterial3: true, // Or false, depending on your preference
-          scaffoldBackgroundColor: const Color(0xFFF5F5F5), // Example from AppColors.background
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF4CAF50), // Example from AppColors.primary
-            elevation: 4.0,
-            iconTheme: IconThemeData(color: Colors.white),
-            titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)
-          )
+        
+        // Authentication provider
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = AuthProvider();
+            // Initialize in the background
+            provider.initialize();
+            return provider;
+          },
         ),
-        home: const SplashScreen(),
-        routes: {
-          '/login': (context) => const HomePage(),
+        
+        // New providers for enhanced UI/UX
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => AccessibilityProvider()),
+      ],
+      child: Consumer4<ThemeProvider, LanguageProvider, AccessibilityProvider, AuthProvider>(
+        builder: (context, themeProvider, languageProvider, accessibilityProvider, authProvider, child) {
+          // Initialize providers
+          themeProvider.initialize();
+          languageProvider.initialize();
+          accessibilityProvider.initialize();
+          
+          return MaterialApp(
+            title: 'AgriCure',
+            
+            // Theme configuration
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            
+            // Localization configuration
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: languageProvider.locale,
+            
+            // Accessibility configuration
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaleFactor: accessibilityProvider.textScaleFactor,
+                ),
+                child: child!,
+              );
+            },
+            
+            home: const SplashScreen(),
+            routes: {
+              '/login': (context) => const LoginPage(),
+              '/signup': (context) => const SignupPage(),
+              '/home': (context) => const HomePage(),
+              '/settings': (context) => const SettingsPage(),
+            },
+            debugShowCheckedModeBanner: false,
+          );
         },
-        debugShowCheckedModeBanner: false,
       ),
     );
   }

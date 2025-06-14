@@ -1,173 +1,210 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
+import '../core/localization/app_localizations.dart';
 
-// Move these styles to a constant to avoid recreation
-const _titleStyle = TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white);
-const _emailStyle = TextStyle(color: Colors.white70);
-const _sectionTitleStyle = TextStyle(
-  fontWeight: FontWeight.bold,
-  color: Color(0xFF757575),
-  fontSize: 14,
-);
+// Define text styles locally since they're not in a separate file
+class AppTextStyles {
+  static TextStyle headline(BuildContext context) =>
+      Theme.of(context).textTheme.headlineSmall!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          );
+
+  static TextStyle bodyRegular(BuildContext context) =>
+      Theme.of(context).textTheme.bodyMedium!.copyWith(
+            color: AppColors.textSecondary,
+          );
+}
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  static const Color primary = Color(0xFF4CAF50);
-  static const Color primaryDark = Color(0xFF388E3C);
-  static const Color background = Color(0xFFF0F0F0);
-  static const Color cardBackground = Colors.white;
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color error = Color(0xFFF44336);
-
-  static const Map<String, String> userData = {
-    'name': 'Axcess',
-    'email': 'axcesstechsolutions@gmail.com',
-  };
+  const ProfilePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    
     return Scaffold(
-      backgroundColor: background,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 240,
-            pinned: true,
-            backgroundColor: primary,
-            flexibleSpace: FlexibleSpaceBar(
-              expandedTitleScale: 1.0,
-              titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              background: Container(
-                color: primary,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 60),
-                    const CircleAvatar(
-                      radius: 48,
-                      backgroundColor: Colors.white,
-                      child: CircleAvatar(
-                        radius: 44,
-                        backgroundColor: primary,
-                        child: Icon(Icons.person_outline, size: 44, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      userData['name']!,
-                      style: _titleStyle,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      userData['email']!,
-                      style: _emailStyle,
-                    ),
-                  ],
+      appBar: AppBar(
+        title: Text(l10n.profile, style: const TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profile Header
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      size: 60,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'axcess',
+                    style: AppTextStyles.headline(context).copyWith(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'axcesstechsolutions@gmail.com',
+                    style: AppTextStyles.bodyRegular(context).copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
-            title: const Text("Profile", style: TextStyle(color: Colors.white)),
-            centerTitle: true,
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildSectionCard(
-                  context,
-                  title: "Account Settings",
-                  items: [
-                    _buildListTile(Icons.edit_outlined, "Edit Profile", () {}),
-                    _buildListTile(Icons.notifications_outlined, "Notifications", () {}),
-                    _buildListTile(Icons.lock_outline, "Privacy & Security", () {}),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildSectionCard(
-                  context,
-                  title: "Support & More",
-                  items: [
-                    _buildListTile(Icons.language_outlined, "Language", () {}),
-                    _buildListTile(Icons.help_outline, "Help & Support", () {}),
-                    _buildListTile(Icons.info_outline, "About Us", () {}),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showLogoutDialog(context),
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    label: const Text("Logout", style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: error,
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+            
+            const SizedBox(height: 30),
+            
+            // Profile Sections
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  _buildProfileSection(
+                    context,
+                    'Personal Information',
+                    [
+                      _buildProfileItem(context, 'Full Name', 'Axcess'),
+                      _buildProfileItem(context, 'Email', 'axcesstechsolutions@gmail.com'),
+                      _buildProfileItem(context, 'Phone', '+1 234 567 8900'),
+                      _buildProfileItem(context, 'Location', 'Farm Location'),
+                    ],
+                  ),
+                  // 'email': 'axcesstechsolutions@gmail.com''name': 'Axcess',
+    
+                  const SizedBox(height: 24),
+                  
+                  _buildProfileSection(
+                    context,
+                    'Farm Information',
+                    [
+                      _buildProfileItem(context, 'Farm Name', 'Green Valley Farm'),
+                      _buildProfileItem(context, 'Farm Size', '50 acres'),
+                      _buildProfileItem(context, 'Crop Types', 'Corn, Wheat, Soybeans'),
+                      _buildProfileItem(context, 'Experience', '10+ years'),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Logout Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showLogoutDialog(context),
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      label: Text(l10n.logout, style: const TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
-              ]),
+                  
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard(BuildContext context, {required String title, required List<Widget> items}) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: _sectionTitleStyle),
-            const Divider(height: 20),
-            ...items,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildListTile(IconData icon, String title, VoidCallback onTap) {
+  Widget _buildProfileSection(BuildContext context, String title, List<Widget> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: _sectionTitleStyle),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: items,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileItem(BuildContext context, String title, String value) {
+    final textPrimary = Theme.of(context).brightness == Brightness.dark 
+        ? Colors.white 
+        : Colors.black;
+    
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      leading: CircleAvatar(
-        backgroundColor: primary.withOpacity(0.1),
-        child: Icon(icon, color: primary),
-      ),
       title: Text(title, style: TextStyle(color: textPrimary)),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
+      subtitle: Text(value, style: TextStyle(color: textPrimary.withOpacity(0.7))),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: () {
+        // Handle item tap
+      },
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textPrimary = Theme.of(context).brightness == Brightness.dark 
+        ? Colors.white 
+        : Colors.black;
+    
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Logout", style: TextStyle(color: Colors.black)),
-        content: const Text("Are you sure you want to log out?", style: TextStyle(color: Colors.black)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel", style: TextStyle(color: Colors.black)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: error),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Logout", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(l10n.logout, style: TextStyle(color: textPrimary)),
+          content: Text(l10n.confirmLogout, style: TextStyle(color: textPrimary)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel, style: TextStyle(color: textPrimary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Handle logout
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+              ),
+              child: Text(l10n.logout, style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
+
+  TextStyle get _sectionTitleStyle => const TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
 }

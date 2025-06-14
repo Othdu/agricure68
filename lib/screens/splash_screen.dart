@@ -3,14 +3,16 @@
 //  A richer splash-screen that layers three effects:
 //
 //  1.  Soft, looping sine-waves at the bottom (parallax).
-//  2.  “Firefly” bubbles that drift upward and twinkle.
+//  2.  "Firefly" bubbles that drift upward and twinkle.
 //  3.  A pulsating neon ring behind the logo.
 //
 //  The title types itself out, gains a shimmer, and the whole
-//  scene exits after 3.2 s → “/login”.
+//  scene exits after 3.2 s → "/login" or "/home" based on auth status.
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -84,7 +86,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     /* route change -------------------------------------------------------- */
     Future.delayed(_routeDelay, () {
-      if (mounted) Navigator.of(context).pushReplacementNamed('/login');
+      if (mounted) {
+        // Check authentication status and navigate accordingly
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (authProvider.isLoggedIn) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
+      }
     });
   }
 
@@ -431,7 +441,7 @@ class _WavePainter extends CustomPainter {
   bool shouldRepaint(_WavePainter old) => old.phase != phase;
 }
 
-// Floating bubble “fireflies”.
+// Floating bubble "fireflies".
 class _BubblePainter extends CustomPainter {
   final double progress;
   static final _rnd = math.Random();

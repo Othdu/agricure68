@@ -3,80 +3,37 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:math';
 import 'dart:async';
+import '../core/theme/app_colors.dart';
+import '../core/localization/app_localizations.dart';
 
 // ENSURE THIS IS THE CORRECT AND ONLY PATH for SensorDataProvider and SensorData model
 import '../plant_data_provider.dart'; // This file MUST define SensorData and SensorDataProvider
 
-// --- AppColors and AppTextStyles (largely unchanged, good foundation) ---
-class AppColors {
-  static const Color primary = Color(0xFF4CAF50);
-  static const Color primaryLight = Color(0xFF81C784);
-  static const Color accent = Color(0xFFFF9800);
-  static const Color background = Color(0xFFF5F7FA);
-  static const Color cardBackground = Colors.white;
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color chartGridColor = Color(0xFFE0E0E0);
-
-  static const Color temperature = Colors.redAccent;
-  static const Color humidity = Colors.blueAccent;
-  static const Color soilMoisture = Color(0xFF6D4C41);
-
-  static const Color soilMoistureCritical = Color(0xFFD32F2F);
-  static const Color soilMoistureDry = Color(0xFFFF9800);
-  static const Color soilMoistureWet = Color(0xFF1976D2);
-  static const Color optimalRangeBackground = Color(0xFFE8F5E9);
-
-  static const Color optimalTemperatureRange = Color(0xFFFFF3E0);
-  static const Color optimalHumidityRange = Color(0xFFE3F2FD);
-}
-
+// Define text styles locally since they're not in a separate file
 class AppTextStyles {
+  static TextStyle title(BuildContext context) =>
+      Theme.of(context).textTheme.titleLarge!.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          );
+
   static TextStyle display(BuildContext context) =>
-      Theme.of(context).textTheme.displaySmall!.copyWith(
+      Theme.of(context).textTheme.headlineMedium!.copyWith(
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           );
 
-  static TextStyle headline(BuildContext context) =>
-      Theme.of(context).textTheme.headlineSmall!.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          );
-
-  static TextStyle title(BuildContext context) =>
-      Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary, // Consider AppColors.primary for main titles
-          );
-
-  static TextStyle body(BuildContext context) =>
-      Theme.of(context).textTheme.bodyMedium!.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 15,
-            height: 1.4, // Added for better readability
-          );
-          
   static TextStyle bodyLarge(BuildContext context) =>
       Theme.of(context).textTheme.bodyLarge!.copyWith(
             color: AppColors.textSecondary,
             fontSize: 16,
-            height: 1.4, // Added for better readability
           );
 
   static TextStyle caption(BuildContext context) =>
       Theme.of(context).textTheme.bodySmall!.copyWith(
-            color: AppColors.textSecondary.withOpacity(0.9),
-            fontSize: 12,
-          );
-  
-  static TextStyle chartAxis(BuildContext context) =>
-      Theme.of(context).textTheme.bodySmall!.copyWith(
             color: AppColors.textSecondary.withOpacity(0.8),
-            fontSize: 10,
           );
 }
-// --- End Theme Definitions ---
 
 class SensorDetailsPage extends StatefulWidget {
   final SensorData sensorData;
@@ -188,7 +145,7 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
   // For brevity, their implementation is omitted here but assumed to be from your provided code.
 
   Widget _leftTitleWidgets(BuildContext context, double value, TitleMeta meta, String unit, {Color? textColor}) {
-    final style = AppTextStyles.chartAxis(context).copyWith(color: textColor ?? AppTextStyles.chartAxis(context).color);
+    final style = AppTextStyles.caption(context).copyWith(color: textColor ?? AppTextStyles.caption(context).color);
     bool isAtMin = (value - meta.min).abs() < 0.01;
     bool isAtMax = (value - meta.max).abs() < 0.01;
     bool isAtInterval = meta.appliedInterval > 0.1 && ((value - meta.min) % meta.appliedInterval).abs() < 0.01;
@@ -203,7 +160,7 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
   }
 
   Widget _bottomTitleWidgets(BuildContext context, double value, TitleMeta meta, {required int totalSpots, Color? textColor}) {
-    final style = AppTextStyles.chartAxis(context).copyWith(color: textColor ?? AppTextStyles.chartAxis(context).color);
+    final style = AppTextStyles.caption(context).copyWith(color: textColor ?? AppTextStyles.caption(context).color);
     String text = '';
     final int spotIndex = value.toInt();
 
@@ -272,19 +229,18 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the actual sensor data instead
-    final sensorData = widget.sensorData;
+    final l10n = AppLocalizations.of(context);
     
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Sensor Details', 
+            Text(l10n.sensorDetails, 
               style: AppTextStyles.title(context).copyWith(color: AppColors.primary)
             ),
             Text(
-              'Last Update: ${_lastUpdate.hour.toString().padLeft(2, '0')}:${_lastUpdate.minute.toString().padLeft(2, '0')}',
+              '${l10n.lastUpdated}: ${_lastUpdate.hour.toString().padLeft(2, '0')}:${_lastUpdate.minute.toString().padLeft(2, '0')}',
               style: AppTextStyles.caption(context).copyWith(color: AppColors.textSecondary),
             ),
           ],
@@ -305,7 +261,7 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                 )
               : Icon(Icons.refresh, color: AppColors.primary.withOpacity(0.8)),
             onPressed: _isLoading ? null : _refreshData,
-            tooltip: 'Refresh Data',
+            tooltip: l10n.refresh,
           )
         ],
       ),
@@ -318,8 +274,8 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
              _ChartCard(
-      title: 'Temperature',
-      currentValue: '${sensorData.temperature.toStringAsFixed(1)}°C',
+      title: l10n.temperature,
+      currentValue: '${widget.sensorData.temperature.toStringAsFixed(1)}°C',
       icon: Icons.thermostat_outlined,
       iconColor: AppColors.temperature,
       chart: Column(
@@ -329,7 +285,7 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${sensorData.temperature.toStringAsFixed(1)}°C',
+                '${widget.sensorData.temperature.toStringAsFixed(1)}°C',
                 style: AppTextStyles.display(context).copyWith(
                   color: AppColors.temperature,
                   fontSize: 42,
@@ -342,15 +298,15 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: sensorData.temperature >= 18 && sensorData.temperature <= 25
+                    color: widget.sensorData.temperature >= 18 && widget.sensorData.temperature <= 25
                         ? AppColors.primary.withOpacity(0.1)
                         : AppColors.temperature.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    _getTemperatureStatus(sensorData.temperature.toDouble()),
+                    _getTemperatureStatus(widget.sensorData.temperature.toDouble()),
                     style: AppTextStyles.bodyLarge(context).copyWith(
-                      color: sensorData.temperature >= 18 && sensorData.temperature <= 25
+                      color: widget.sensorData.temperature >= 18 && widget.sensorData.temperature <= 25
                           ? AppColors.primary
                           : AppColors.temperature,
                       fontSize: 15,
@@ -504,15 +460,15 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
 
               const SizedBox(height: 20),
               _ChartCard(
-                title: 'Humidity',
-                currentValue: '${sensorData.humidity.toStringAsFixed(1)}%',
+                title: l10n.humidity,
+                currentValue: '${widget.sensorData.humidity.toStringAsFixed(1)}%',
                 icon: Icons.water_drop_outlined,
                 iconColor: AppColors.humidity,
                 chart: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${sensorData.humidity.toStringAsFixed(1)}%',
+                      '${widget.sensorData.humidity.toStringAsFixed(1)}%',
                       style: AppTextStyles.display(context).copyWith(
                         color: AppColors.humidity,
                         fontSize: 42,
@@ -521,10 +477,10 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      sensorData.humidity < 30 ? "Very Dry" :
-                      sensorData.humidity < 40 ? "Dry" :
-                      sensorData.humidity <= 60 ? "Optimal" :
-                      sensorData.humidity <= 70 ? "Humid" : "Very Humid",
+                      widget.sensorData.humidity < 30 ? "Very Dry" :
+                      widget.sensorData.humidity < 40 ? "Dry" :
+                      widget.sensorData.humidity <= 60 ? "Optimal" :
+                      widget.sensorData.humidity <= 70 ? "Humid" : "Very Humid",
                       style: AppTextStyles.bodyLarge(context).copyWith(
                         color: AppColors.textSecondary.withOpacity(0.9),
                         fontSize: 17,
@@ -672,7 +628,7 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
               const SizedBox(height: 20),
               _ChartCard(
                 title: 'Soil Moisture Levels',
-                currentValue: _calculateAverageMoistureForDisplay(sensorData),
+                currentValue: _calculateAverageMoistureForDisplay(widget.sensorData),
                 icon: Icons.eco_outlined,
                 iconColor: AppColors.soilMoisture,
                 chart: SizedBox(
@@ -683,10 +639,10 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                       maxY: 100,
                       minY: 0,
                       barGroups: [
-                        _makeEnhancedBarGroupData(context, 0, sensorData.soilMoisture1.toDouble()),
-                        _makeEnhancedBarGroupData(context, 1, sensorData.soilMoisture2.toDouble()),
-                        _makeEnhancedBarGroupData(context, 2, sensorData.soilMoisture3.toDouble()),
-                        _makeEnhancedBarGroupData(context, 3, sensorData.soilMoisture4.toDouble()),
+                        _makeEnhancedBarGroupData(context, 0, widget.sensorData.soilMoisture1.toDouble()),
+                        _makeEnhancedBarGroupData(context, 1, widget.sensorData.soilMoisture2.toDouble()),
+                        _makeEnhancedBarGroupData(context, 2, widget.sensorData.soilMoisture3.toDouble()),
+                        _makeEnhancedBarGroupData(context, 3, widget.sensorData.soilMoisture4.toDouble()),
                       ],
                       titlesData: FlTitlesData(
                         leftTitles: AxisTitles(
@@ -708,7 +664,7 @@ class _SensorDetailsPageState extends State<SensorDetailsPage> {
                             showTitles: true,
                             reservedSize: 32,
                             getTitlesWidget: (double value, TitleMeta meta) {
-                              final style = AppTextStyles.chartAxis(context).copyWith(
+                              final style = AppTextStyles.caption(context).copyWith(
                                 color: AppColors.soilMoisture.withOpacity(0.9),
                                 fontWeight: FontWeight.w600,
                               );
@@ -895,7 +851,7 @@ class _ChartCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           title,
-                          style: AppTextStyles.headline(context).copyWith(
+                          style: AppTextStyles.title(context).copyWith(
                             fontSize: 20,
                             color: AppColors.textPrimary.withOpacity(0.9),
                           ),
@@ -911,7 +867,7 @@ class _ChartCard extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 12.0),
                     child: Text(
                       currentValue,
-                      style: AppTextStyles.headline(context).copyWith(
+                      style: AppTextStyles.bodyLarge(context).copyWith(
                         fontSize: 20,
                         color: iconColor,
                         fontWeight: FontWeight.bold,

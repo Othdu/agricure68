@@ -7,6 +7,8 @@ import '../providers/farm_data_provider.dart'; // Ensure this path is correct
 import '../screens/profile_page.dart';
 import '../screens/contact_us_page.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/dashboard_widget.dart'; // New dashboard widgets
+import '../core/localization/app_localizations.dart'; // Localization support
 import 'dart:async';
 
 // AppColors, AppTextStyles, _CustomCard, _SensorDataWidget, _StatusIcon
@@ -126,7 +128,7 @@ class HomePage extends StatelessWidget {
         children: [
           HomePage._buildSectionHeader(
             context,
-            'Weather Overview',
+            AppLocalizations.of(context).weatherOverview,
             Icons.wb_sunny_outlined,
             AppColors.primary,
             weatherColor,
@@ -168,7 +170,7 @@ class HomePage extends StatelessWidget {
                   children: [
                     _buildWeatherDetail(
                       context,
-                      'Humidity',
+                      AppLocalizations.of(context).humidity,
                       farmData.humidity,
                       Icons.water_drop_outlined,
                       AppColors.textSecondary,
@@ -176,7 +178,7 @@ class HomePage extends StatelessWidget {
                     const SizedBox(height: 12),
                     _buildWeatherDetail(
                       context,
-                      'Wind',
+                      AppLocalizations.of(context).wind,
                       farmData.wind,
                       Icons.air_outlined,
                       AppColors.textSecondary,
@@ -198,14 +200,17 @@ class HomePage extends StatelessWidget {
         Icon(icon, color: color, size: 20),
         const SizedBox(width: 6),
         Text(
-          '$label: ',
-          style: AppTextStyles.bodySmall(context).copyWith(color: color),
-        ),
-        Text(
           value,
           style: AppTextStyles.bodyLarge(context).copyWith(
-            color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall(context).copyWith(
+            color: AppColors.textSecondary,
           ),
         ),
       ],
@@ -219,7 +224,7 @@ class HomePage extends StatelessWidget {
         children: [
           HomePage._buildSectionHeader(
             context,
-            'Crop Calendar',
+            AppLocalizations.of(context).cropCalendar,
             Icons.calendar_today_outlined,
             AppColors.primary,
             AppColors.primary,
@@ -228,7 +233,7 @@ class HomePage extends StatelessWidget {
           if (farmData.cropCalendar.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
-              child: Center(child: Text("No upcoming activities.", style: AppTextStyles.bodyRegular(context))),
+              child: Center(child: Text(AppLocalizations.of(context).noUpcomingActivities, style: AppTextStyles.bodyRegular(context))),
             )
           else
             ListView.separated(
@@ -287,7 +292,7 @@ class HomePage extends StatelessWidget {
         children: [
           HomePage._buildSectionHeader(
             context,
-            'Market Prices',
+            AppLocalizations.of(context).marketPrices,
             Icons.trending_up_outlined,
             AppColors.accent,
             AppColors.accent,
@@ -296,7 +301,7 @@ class HomePage extends StatelessWidget {
             if (farmData.marketPrices.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
-              child: Center(child: Text("Market prices not available.", style: AppTextStyles.bodyRegular(context))),
+              child: Center(child: Text(AppLocalizations.of(context).marketPricesNotAvailable, style: AppTextStyles.bodyRegular(context))),
             )
           else
             ListView.separated(
@@ -358,13 +363,13 @@ class HomePage extends StatelessWidget {
           children: [
             HomePage._buildSectionHeader(
               context,
-              'Farm Stats',
+              AppLocalizations.of(context).farmStats,
               Icons.bar_chart_outlined,
               Colors.blueGrey,
               Colors.blueGrey,
             ),
             const SizedBox(height: 16),
-            Center(child: Text("Farm statistics not available.", style: AppTextStyles.bodyRegular(context))),
+            Center(child: Text(AppLocalizations.of(context).farmStatsNotAvailable, style: AppTextStyles.bodyRegular(context))),
           ],
         ),
       );
@@ -375,7 +380,7 @@ class HomePage extends StatelessWidget {
         children: [
           HomePage._buildSectionHeader(
             context,
-            'Farm Stats',
+            AppLocalizations.of(context).farmStats,
             Icons.bar_chart_outlined,
             statColor,
             statColor,
@@ -427,7 +432,7 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildQuickTipsWidget(BuildContext context, FarmDataProvider farmData) {
-    Color tipColor = Colors.teal;
+    Color tipColor = AppColors.accent;
 
     return _CustomCard(
       child: Column(
@@ -435,7 +440,7 @@ class HomePage extends StatelessWidget {
         children: [
           HomePage._buildSectionHeader(
             context,
-            'Quick Tips',
+            AppLocalizations.of(context).quickTips,
             Icons.lightbulb_outline,
             tipColor,
             tipColor,
@@ -444,7 +449,7 @@ class HomePage extends StatelessWidget {
           if (farmData.quickTips.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
-              child: Center(child: Text("No tips available right now.", style: AppTextStyles.bodyRegular(context))),
+              child: Center(child: Text(AppLocalizations.of(context).noTipsAvailable, style: AppTextStyles.bodyRegular(context))),
             )
           else
             ListView.separated(
@@ -485,13 +490,14 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final farmData = Provider.of<FarmDataProvider>(context);
+    final l10n = AppLocalizations.of(context);
 
     // Define the tabs
     final List<Tab> myTabs = <Tab>[
-      const Tab(text: 'Dashboard', icon: Icon(Icons.dashboard_outlined)),
-      const Tab(text: 'Schedule', icon: Icon(Icons.calendar_today_outlined)),
-      const Tab(text: 'Market', icon: Icon(Icons.show_chart_outlined)),
-      const Tab(text: 'Insights', icon: Icon(Icons.insights_outlined)),
+      Tab(text: l10n.dashboard, icon: const Icon(Icons.dashboard_outlined)),
+      Tab(text: l10n.schedule, icon: const Icon(Icons.calendar_today_outlined)),
+      Tab(text: l10n.market, icon: const Icon(Icons.show_chart_outlined)),
+      Tab(text: l10n.insights, icon: const Icon(Icons.insights_outlined)),
     ];
 
     return DefaultTabController(
@@ -500,9 +506,9 @@ class HomePage extends StatelessWidget {
         backgroundColor: AppColors.background,
         drawer: const AppDrawer(),
         appBar: AppBar(
-          title: const Text(
-            'AgriCure',
-            style: TextStyle(
+          title: Text(
+            l10n.appTitle,
+            style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -527,12 +533,12 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Welcome Back!',
+                    l10n.welcomeBack,
                     style: AppTextStyles.headline(context).copyWith(fontSize: 24),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "Here's your farm's current status.",
+                    l10n.farmStatus,
                     style: AppTextStyles.bodyRegular(context),
                   ),
                 ],
