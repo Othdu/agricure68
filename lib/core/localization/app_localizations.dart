@@ -36,9 +36,6 @@ class AppLocalizations {
   String get profile => _localizedValues[locale.languageCode]!['profile']!;
   String get contactUs => _localizedValues[locale.languageCode]!['contactUs']!;
   String get settings => _localizedValues[locale.languageCode]!['settings']!;
-  String get darkMode => _localizedValues[locale.languageCode]!['darkMode']!;
-  String get lightMode => _localizedValues[locale.languageCode]!['lightMode']!;
-  String get systemMode => _localizedValues[locale.languageCode]!['systemMode']!;
   String get language => _localizedValues[locale.languageCode]!['language']!;
   String get accessibility => _localizedValues[locale.languageCode]!['accessibility']!;
   String get weatherOverview => _localizedValues[locale.languageCode]!['weatherOverview']!;
@@ -99,9 +96,6 @@ class AppLocalizations {
   String get addWidgets => _localizedValues[locale.languageCode]!['addWidgets']!;
   String get dashboardCustomizationComingSoon => _localizedValues[locale.languageCode]!['dashboardCustomizationComingSoon']!;
   String get widgetSelectionComingSoon => _localizedValues[locale.languageCode]!['widgetSelectionComingSoon']!;
-  String get useLightTheme => _localizedValues[locale.languageCode]!['useLightTheme']!;
-  String get useDarkTheme => _localizedValues[locale.languageCode]!['useDarkTheme']!;
-  String get followSystemSetting => _localizedValues[locale.languageCode]!['followSystemSetting']!;
   String get enableScreenReaderSupport => _localizedValues[locale.languageCode]!['enableScreenReaderSupport']!;
   String get increaseContrastForBetterVisibility => _localizedValues[locale.languageCode]!['increaseContrastForBetterVisibility']!;
   String get increaseTextSizeForBetterReadability => _localizedValues[locale.languageCode]!['increaseTextSizeForBetterReadability']!;
@@ -207,9 +201,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'profile': 'Profile',
     'contactUs': 'Contact Us',
     'settings': 'Settings',
-    'darkMode': 'Dark Mode',
-    'lightMode': 'Light Mode',
-    'systemMode': 'System Mode',
     'language': 'Language',
     'accessibility': 'Accessibility',
     'weatherOverview': 'Weather Overview',
@@ -268,9 +259,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'addWidgets': 'Add Widgets',
     'dashboardCustomizationComingSoon': 'Dashboard customization coming soon...',
     'widgetSelectionComingSoon': 'Widget selection coming soon...',
-    'useLightTheme': 'Use light theme',
-    'useDarkTheme': 'Use dark theme',
-    'followSystemSetting': 'Follow system setting',
     'enableScreenReaderSupport': 'Enable screen reader support',
     'increaseContrastForBetterVisibility': 'Increase contrast for better visibility',
     'increaseTextSizeForBetterReadability': 'Increase text size for better readability',
@@ -342,9 +330,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'profile': 'الملف الشخصي',
     'contactUs': 'اتصل بنا',
     'settings': 'الإعدادات',
-    'darkMode': 'الوضع الداكن',
-    'lightMode': 'الوضع الفاتح',
-    'systemMode': 'وضع النظام',
     'language': 'اللغة',
     'accessibility': 'سهولة الوصول',
     'weatherOverview': 'نظرة عامة على الطقس',
@@ -403,9 +388,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'addWidgets': 'إضافة عناصر',
     'dashboardCustomizationComingSoon': 'تخصيص لوحة التحكم قريباً...',
     'widgetSelectionComingSoon': 'اختيار العناصر قريباً...',
-    'useLightTheme': 'استخدام المظهر الفاتح',
-    'useDarkTheme': 'استخدام المظهر الداكن',
-    'followSystemSetting': 'اتباع إعداد النظام',
     'enableScreenReaderSupport': 'تمكين دعم قارئ الشاشة',
     'increaseContrastForBetterVisibility': 'زيادة التباين لرؤية أفضل',
     'increaseTextSizeForBetterReadability': 'زيادة حجم النص لقراءة أفضل',
@@ -477,9 +459,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'profile': 'Perfil',
     'contactUs': 'Contáctanos',
     'settings': 'Configuración',
-    'darkMode': 'Modo Oscuro',
-    'lightMode': 'Modo Claro',
-    'systemMode': 'Modo Sistema',
     'language': 'Idioma',
     'accessibility': 'Accesibilidad',
     'weatherOverview': 'Resumen del Clima',
@@ -612,9 +591,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'profile': 'Profil',
     'contactUs': 'Contactez-nous',
     'settings': 'Paramètres',
-    'darkMode': 'Mode Sombre',
-    'lightMode': 'Mode Clair',
-    'systemMode': 'Mode Système',
     'language': 'Langue',
     'accessibility': 'Accessibilité',
     'weatherOverview': 'Aperçu Météo',
@@ -747,9 +723,6 @@ final Map<String, Map<String, String>> _localizedValues = {
     'profile': '个人资料',
     'contactUs': '联系我们',
     'settings': '设置',
-    'darkMode': '深色模式',
-    'lightMode': '浅色模式',
-    'systemMode': '系统模式',
     'language': '语言',
     'accessibility': '无障碍',
     'weatherOverview': '天气概览',

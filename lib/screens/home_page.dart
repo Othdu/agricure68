@@ -10,6 +10,8 @@ import '../widgets/app_drawer.dart';
 import '../widgets/dashboard_widget.dart'; // New dashboard widgets
 import '../core/localization/app_localizations.dart'; // Localization support
 import 'dart:async';
+import '../services/firebase_service.dart';
+import '../providers/detections_provider.dart';
 
 // AppColors, AppTextStyles, _CustomCard, _SensorDataWidget, _StatusIcon
 // and other helper build methods (_buildWeatherWidget, _buildCropCalendarWidget, etc.)
@@ -997,81 +999,164 @@ class _StatusIcon extends StatelessWidget {
   }
 }
 
-// Add new FirebaseConfigWidget class
-class _FirebaseConfigWidget extends StatelessWidget {
+// Replace _FirebaseConfigWidget with HTTP-based detections widget
+class _FirebaseConfigWidget extends StatefulWidget {
   const _FirebaseConfigWidget({Key? key}) : super(key: key);
 
   @override
+  State<_FirebaseConfigWidget> createState() => _FirebaseConfigWidgetState();
+}
+
+class _FirebaseConfigWidgetState extends State<_FirebaseConfigWidget> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DetectionsProvider>(context, listen: false).fetchDetections();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return _CustomCard(
+    return Consumer<DetectionsProvider>(
+      builder: (context, provider, child) {
+        return _CustomCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  HomePage._buildSectionHeader(
+                    context,
+                    'Detections',
+                    Icons.search,
+                    Colors.blue,
+                    Colors.blue,
+                  ),
+                  if (provider.isLoading)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    IconButton(
+                      onPressed: () => provider.fetchDetections(),
+                      icon: const Icon(Icons.refresh, color: Colors.blue),
+                      tooltip: 'Refresh data',
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (provider.error != null)
+                _buildErrorWidget(context, provider.error!)
+              else if (provider.isLoading)
+                _buildLoadingWidget(context)
+              else if (provider.detections == null || provider.detections!.isEmpty)
+                _buildNoDataWidget(context)
+              else
+                _buildDetectionsList(context, provider.detections!),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildErrorWidget(BuildContext context, String error) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HomePage._buildSectionHeader(
-            context,
-            'Firebase Models',
-            Icons.storage_outlined,
-            Colors.blue,
-            Colors.blue,
-          ),
-          const SizedBox(height: 16),
-          _buildModelSection(
-            'Authentication',
-            [
-              _buildModelItem('User Model', 'users'),
-              _buildModelItem('Auth Settings', 'auth_settings'),
+          Row(
+            children: [
+              Icon(Icons.error_outline, color: AppColors.error, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Connection Error',
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildModelSection(
-            'Farm Data',
-            [
-              _buildModelItem('Crops', 'crops'),
-              _buildModelItem('Soil Data', 'soil_data'),
-              _buildModelItem('Weather Data', 'weather_data'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildModelSection(
-            'Sensor Data',
-            [
-              _buildModelItem('Temperature', 'temperature_readings'),
-              _buildModelItem('Humidity', 'humidity_readings'),
-              _buildModelItem('Soil Moisture', 'moisture_readings'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildModelSection(
-            'Market Data',
-            [
-              _buildModelItem('Crop Prices', 'crop_prices'),
-              _buildModelItem('Market Trends', 'market_trends'),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: TextStyle(
+              color: AppColors.error.withOpacity(0.8),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildModelSection(String title, List<Widget> models) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...models,
-      ],
+  Widget _buildLoadingWidget(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 40.0),
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 
-  Widget _buildModelItem(String name, String collection) {
+  Widget _buildNoDataWidget(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40.0),
+        child: Column(
+          children: [
+            Icon(Icons.storage_outlined, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'No detections available',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap refresh to fetch data from Firebase',
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetectionsList(BuildContext context, Map<String, dynamic> detections) {
+    final entries = detections.entries.toList();
+    if (entries.isEmpty) return _buildNoDataWidget(context);
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: entries.length,
+      separatorBuilder: (context, index) => const Divider(height: 20, thickness: 0.5, color: AppColors.chartGridColor),
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        final data = entry.value as Map<String, dynamic>?;
+        return _buildDetectionItem(context, entry.key, data);
+      },
+    );
+  }
+
+  Widget _buildDetectionItem(BuildContext context, String id, Map<String, dynamic>? data) {
+    if (data == null) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -1080,33 +1165,19 @@ class _FirebaseConfigWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.data_object, size: 20, color: Colors.blue.shade700),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Collection: $collection',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
+          Text(
+            data['model']?.toString() ?? 'Unknown Model',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue),
           ),
-          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+          const SizedBox(height: 4),
+          Text('Result: ${data['results'] ?? 'N/A'}', style: const TextStyle(fontSize: 14)),
+          const SizedBox(height: 2),
+          Text('Treatment: ${data['treatment'] ?? 'N/A'}', style: const TextStyle(fontSize: 13, color: Colors.black54)),
+          const SizedBox(height: 2),
+          Text('ID: $id', style: const TextStyle(fontSize: 11, color: Colors.grey)),
         ],
       ),
     );

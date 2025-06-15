@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/theme_provider.dart';
 import '../core/localization/app_localizations.dart';
 import '../core/accessibility/accessibility_provider.dart';
 import '../providers/auth_provider.dart';

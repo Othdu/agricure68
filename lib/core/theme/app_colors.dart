@@ -28,32 +28,4 @@ class AppColors {
   static const Color optimalRangeBackground = Color(0xFFE8F5E9);
   static const Color optimalTemperatureRange = Color(0xFFFFF3E0);
   static const Color optimalHumidityRange = Color(0xFFE3F2FD);
-
-  // Dark Theme Colors
-  static const Color darkPrimary = Color(0xFF66BB6A);
-  static const Color darkPrimaryLight = Color(0xFFA5D6A7);
-  static const Color darkPrimaryDark = Color(0xFF2E7D32);
-  static const Color darkAccent = Color(0xFFFFB74D);
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkCardBackground = Color(0xFF1E1E1E);
-  static const Color darkTextPrimary = Color(0xFFE0E0E0);
-  static const Color darkTextSecondary = Color(0xFFB0B0B0);
-  static const Color darkIconColor = Color(0xFFCCCCCC);
-  static const Color darkSuccess = Color(0xFF66BB6A);
-  static const Color darkWarning = Color(0xFFFFB74D);
-  static const Color darkError = Color(0xFFEF5350);
-  static const Color darkSoilMoistureColor = Color(0xFF8D6E63);
-  static const Color darkChartGridColor = Color(0xFF424242);
-  static const Color darkWarningText = Color(0xFFFFCC02);
-
-  // Dark Chart specific colors
-  static const Color darkTemperature = Color(0xFFEF5350);
-  static const Color darkHumidity = Color(0xFF42A5F5);
-  static const Color darkSoilMoisture = Color(0xFF8D6E63);
-  static const Color darkSoilMoistureCritical = Color(0xFFEF5350);
-  static const Color darkSoilMoistureDry = Color(0xFFFFB74D);
-  static const Color darkSoilMoistureWet = Color(0xFF42A5F5);
-  static const Color darkOptimalRangeBackground = Color(0xFF1B5E20);
-  static const Color darkOptimalTemperatureRange = Color(0xFFE65100);
-  static const Color darkOptimalHumidityRange = Color(0xFF1565C0);
 } 
